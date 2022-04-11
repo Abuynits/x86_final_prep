@@ -1,333 +1,3 @@
-How to write a string:
-Mov edx, OFFSET str1
-Call writeString
-
-Process code (with local variables):
-
-myProc PROC
-	Push ebp
-	Mov ebp,esp
-	Sub esp,8;allocate space for two local variables
-	;move local variables by mov EBP-4, val
-
-
-
-Add esp, 8; move back from local variables
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	myProc endp
-
-Process code (without local variables)
-myProc proc
-Push ebp
-	Mov ebp,esp
-
-;note: use lea when move vars around: lea esi, [ebp-12], not mov esi, [ebp-12]
-
-
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	myProc endp
-
-If want to say that you use a register, but not modify it:
-myProc proc
-Push ebp
-	Mov ebp,esp
-Push ebx
-Push edx
-
-
-
-Pop edx
-Pop ebx
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	myProc endp
-
-Stack configuration:
-Param; [EBP+12];1st param
-Param; [EBP+8];2nd param
-Return add;never access
-Local var 1 [EBP-4]
-Local var 2 [EBP-8] (this is esp)
-
-Declar local var easier:
-X_local EQU DWORD PTR [ebp-4]; param
-Param1 EQU DWORD PTR [ebp+4];local var
-
-Starter code:
-INCLUDE Irvine32.inc
-;
-;
-.386
-.model flat,stdcall
-.stack 4096
-ExitProcess proto,dwExitCode:dword
-.data
-
-.code
-
-
-main proc
-
-
-main endp
-invoke ExitProcess, 0
-
-
-end main
-
-Remove chars from a word:
-.data
-
-str1 BYTE "Good Morrrning",0
-
-.code
-
-
-main proc
-mov esi, OFFSET str1
-push 2; number letter remove
-mov ebx, lengthof str1
-push ebx
-mov ebx, 7
-push ebx;loc in array
-call myProc
-mov edx, offset str1
-call writeString
-
-main ENDP
-invoke ExitProcess, 0
-
-myProc PROC
-	;esi = ptr
-	; ecx = length
-	; eax = loc remove
-	Push ebp
-	Mov ebp,esp
-	mov eax, [ebp+8]
-	mov ecx, [ebp+12]
-	mov edx, [ebp+16]
-	sub ecx, eax
-	sub ecx, edx
-
-	add esi, eax;esi now points to start of array
-
-	l1:
-	mov al,[esi+edx]
-	mov [esi],al
-	add esi,1
-	loop l1
-
-	mov al, 0
-	mov [esi],al
-
-
-
-
-	Mov esp,ebp;
-	Pop ebp;
-	Ret
-	myProc endp
-
-end main
-
-
-Proc to get length of a string (if have extra space - count until reach a 0) return in ebx
-getLengthString proc
-	Push ebp
-	Mov ebp,esp
-
-	mov esi, [ebp+8]
-	mov ebx,0
-	l1:
-	mov al,[esi]
-	cmp al, 0
-	jz endCounter
-	inc ebx
-	inc esi
-	jmp l1
-
-	endCounter:
-
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	getLengthString endp
-
-Find largest value in array:
-.data
-arr1 DWORD 1,6,4,6,3,8,5
-.code
-
-main proc
-push offset arr1
-push lengthof arr1
-call findLargest
-mov ebx,eax
-main endp
-invoke ExitProcess, 0
-
-findLargest proc
-	Push ebp
-	Mov ebp,esp
-	push edi
-	push ecx
-
-	mov edi, [ebp+12]
-	mov ecx, [ebp+8]
-	mov eax, 0
-
-	l1:
-	cmp eax, [edi]
-	ja notfoundNewLargest
-
-	mov eax, [edi]
-
-
-	notFoundNewLargest:
-
-	add edi, 4
-
-	loop l1
-
-
-	pop edi
-	pop ecx
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	findLargest endp
-
-
-end main
-
-count similar elements in array:
-.data
-arr1 DWORD 1,2,3,4,5,6,4,7
-arr2 DWORD 2,3,3,5,6,3,6,4
-len EQU [ebp-4]
-
-.code
-
-
-main proc
-push offset arr1
-push offset arr2
-push lengthof arr1
-call getSimilar
-mov ebx,eax
-
-
-main endp
-invoke ExitProcess, 0
-
-getSimilar proc
-Push ebp
-	mov ebp,esp
-	sub esp,4
-	push ecx
-	push edx
-	push edi
-	push esi
-	mov esi,[ebp+8]
-	mov len,esi;store lenght as temp var
-	mov esi, [ebp+12]
-	mov edi, [ebp+16]
-
-	mov ecx, len
-	mov eax,0
-	l1:
-	mov edx, [edi]
-	cmp [esi], edx
-	JNE notEqual
-	inc eax
-	notEqual:
-
-	add esi,4
-	add edi,4
-	loop l1
-
-	pop esi
-	pop edi
-	pop edx
-	pop ecx
-	add esp,4
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	getSimilar endp
-
-end main
-
-
-
-Check if array has consecutive values that are equal:
-.data
-arr1 DWORD 1,2,3,3,4,4,0,1,3,3,3,4,5,6,6,6
-numFind DWORD 3
-num EQU [EBP-4]
-.code
-
-
-
-
-main proc
-push offset arr1
-push lengthof arr1
-call findThrees; return 1 in eax if have 3 consecutive integers
-
-main endp
-invoke ExitProcess, 0
-findThrees proc
-	Push ebp
-	mov ebp,esp
-	sub esp,4
-	push esi
-	push ecx
-	push ebx
-	mov esi, [ebp+8]
-	mov num,esi
-	mov esi, [ebp+12]
-	mov ecx, num
-	sub ecx, 3
-	mov eax,0
-
-	add esi,12
-
-	l1:
-	mov ebx, [esi]
-	cmp ebx, [esi-4]
-	jne notSame
-	cmp ebx,[esi-8]
-	jne notSame
-	mov ecx, 1
-	mov eax, 1
-	notSame:
-
-	add esi,4
-
-	loop l1
-
-	pop ebx
-	pop ecx
-	pop esi
-	add esp,4
-	Mov esp,ebp;esp used for manipulation while ebp points to return address
-	Pop ebp;get the return address
-	Ret
-	findThrees endp
-
-
-
-
-end main
-
-
-
 Generate Prime numbers:
 .data
 startLoc DWORD 2
@@ -682,4 +352,335 @@ orderList proc
 	Ret
 	orderList endp
 end main
+
+How to write a string:
+Mov edx, OFFSET str1
+Call writeString
+
+Process code (with local variables):
+
+myProc PROC
+	Push ebp
+	Mov ebp,esp
+	Sub esp,8;allocate space for two local variables
+	;move local variables by mov EBP-4, val
+
+
+
+Add esp, 8; move back from local variables
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	myProc endp
+
+Process code (without local variables)
+myProc proc
+Push ebp
+	Mov ebp,esp
+
+;note: use lea when move vars around: lea esi, [ebp-12], not mov esi, [ebp-12]
+
+
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	myProc endp
+
+If want to say that you use a register, but not modify it:
+myProc proc
+Push ebp
+	Mov ebp,esp
+Push ebx
+Push edx
+
+
+
+Pop edx
+Pop ebx
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	myProc endp
+
+Stack configuration:
+Param; [EBP+12];1st param
+Param; [EBP+8];2nd param
+Return add;never access
+Local var 1 [EBP-4]
+Local var 2 [EBP-8] (this is esp)
+
+Declar local var easier:
+X_local EQU DWORD PTR [ebp-4]; param
+Param1 EQU DWORD PTR [ebp+4];local var
+
+Starter code:
+INCLUDE Irvine32.inc
+;
+;
+.386
+.model flat,stdcall
+.stack 4096
+ExitProcess proto,dwExitCode:dword
+.data
+
+.code
+
+
+main proc
+
+
+main endp
+invoke ExitProcess, 0
+
+
+end main
+
+Remove chars from a word:
+.data
+
+str1 BYTE "Good Morrrning",0
+
+.code
+
+
+main proc
+mov esi, OFFSET str1
+push 2; number letter remove
+mov ebx, lengthof str1
+push ebx
+mov ebx, 7
+push ebx;loc in array
+call myProc
+mov edx, offset str1
+call writeString
+
+main ENDP
+invoke ExitProcess, 0
+
+myProc PROC
+	;esi = ptr
+	; ecx = length
+	; eax = loc remove
+	Push ebp
+	Mov ebp,esp
+	mov eax, [ebp+8]
+	mov ecx, [ebp+12]
+	mov edx, [ebp+16]
+	sub ecx, eax
+	sub ecx, edx
+
+	add esi, eax;esi now points to start of array
+
+	l1:
+	mov al,[esi+edx]
+	mov [esi],al
+	add esi,1
+	loop l1
+
+	mov al, 0
+	mov [esi],al
+
+
+
+
+	Mov esp,ebp;
+	Pop ebp;
+	Ret
+	myProc endp
+
+end main
+
+
+Proc to get length of a string (if have extra space - count until reach a 0) return in ebx
+getLengthString proc
+	Push ebp
+	Mov ebp,esp
+
+	mov esi, [ebp+8]
+	mov ebx,0
+	l1:
+	mov al,[esi]
+	cmp al, 0
+	jz endCounter
+	inc ebx
+	inc esi
+	jmp l1
+
+	endCounter:
+
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	getLengthString endp
+
+Find largest value in array:
+.data
+arr1 DWORD 1,6,4,6,3,8,5
+.code
+
+main proc
+push offset arr1
+push lengthof arr1
+call findLargest
+mov ebx,eax
+main endp
+invoke ExitProcess, 0
+
+findLargest proc
+	Push ebp
+	Mov ebp,esp
+	push edi
+	push ecx
+
+	mov edi, [ebp+12]
+	mov ecx, [ebp+8]
+	mov eax, 0
+
+	l1:
+	cmp eax, [edi]
+	ja notfoundNewLargest
+
+	mov eax, [edi]
+
+
+	notFoundNewLargest:
+
+	add edi, 4
+
+	loop l1
+
+
+	pop edi
+	pop ecx
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	findLargest endp
+
+
+end main
+
+count similar elements in array:
+.data
+arr1 DWORD 1,2,3,4,5,6,4,7
+arr2 DWORD 2,3,3,5,6,3,6,4
+len EQU [ebp-4]
+
+.code
+
+
+main proc
+push offset arr1
+push offset arr2
+push lengthof arr1
+call getSimilar
+mov ebx,eax
+
+
+main endp
+invoke ExitProcess, 0
+
+getSimilar proc
+Push ebp
+	mov ebp,esp
+	sub esp,4
+	push ecx
+	push edx
+	push edi
+	push esi
+	mov esi,[ebp+8]
+	mov len,esi;store lenght as temp var
+	mov esi, [ebp+12]
+	mov edi, [ebp+16]
+
+	mov ecx, len
+	mov eax,0
+	l1:
+	mov edx, [edi]
+	cmp [esi], edx
+	JNE notEqual
+	inc eax
+	notEqual:
+
+	add esi,4
+	add edi,4
+	loop l1
+
+	pop esi
+	pop edi
+	pop edx
+	pop ecx
+	add esp,4
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	getSimilar endp
+
+end main
+
+
+
+Check if array has consecutive values that are equal:
+.data
+arr1 DWORD 1,2,3,3,4,4,0,1,3,3,3,4,5,6,6,6
+numFind DWORD 3
+num EQU [EBP-4]
+.code
+
+
+
+
+main proc
+push offset arr1
+push lengthof arr1
+call findThrees; return 1 in eax if have 3 consecutive integers
+
+main endp
+invoke ExitProcess, 0
+findThrees proc
+	Push ebp
+	mov ebp,esp
+	sub esp,4
+	push esi
+	push ecx
+	push ebx
+	mov esi, [ebp+8]
+	mov num,esi
+	mov esi, [ebp+12]
+	mov ecx, num
+	sub ecx, 3
+	mov eax,0
+
+	add esi,12
+
+	l1:
+	mov ebx, [esi]
+	cmp ebx, [esi-4]
+	jne notSame
+	cmp ebx,[esi-8]
+	jne notSame
+	mov ecx, 1
+	mov eax, 1
+	notSame:
+
+	add esi,4
+
+	loop l1
+
+	pop ebx
+	pop ecx
+	pop esi
+	add esp,4
+	Mov esp,ebp;esp used for manipulation while ebp points to return address
+	Pop ebp;get the return address
+	Ret
+	findThrees endp
+
+
+
+
+end main
+
+
+
 
