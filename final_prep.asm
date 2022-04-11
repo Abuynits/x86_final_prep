@@ -122,7 +122,7 @@ generateArray proc
 
 end main
 
-
+===================================
 algorithm:
 have all of the numbers
 take the lowest number and see if it is unmarked. if marked, skip over it
@@ -234,6 +234,7 @@ y = n
 } while (y > 0)
 return x
 }
+=================================================
 Fib series generator:
 .data
 
@@ -285,6 +286,7 @@ fib proc
 
 
 end main
+==========================================
 Linked list access:
 ​​.data
  links BYTE 0, 4, 5, 6, 2, 3, 7, 0
@@ -352,6 +354,9 @@ orderList proc
 	Ret
 	orderList endp
 end main
+==========================================
+
+GENERAL NOTES:
 
 How to write a string:
 Mov edx, OFFSET str1
